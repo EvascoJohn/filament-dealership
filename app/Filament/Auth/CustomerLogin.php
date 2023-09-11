@@ -9,6 +9,10 @@ use Filament\Pages\Auth\Login as BaseAuth;
 
 class CustomerLogin extends BaseAuth
 {
+
+    protected static string $view = 'filament.customer.customer-login';
+
+
     public function form(Form $form): Form
     {
         return $form->schema([

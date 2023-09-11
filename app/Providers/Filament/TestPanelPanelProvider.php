@@ -10,6 +10,7 @@ use Filament\Panel;
 use Filament\PanelProvider;
 use Filament\Support\Colors\Color;
 use Filament\Widgets;
+use Filament\Navigation;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
 use Illuminate\Cookie\Middleware\EncryptCookies;
 use Illuminate\Foundation\Http\Middleware\VerifyCsrfToken;
@@ -18,7 +19,7 @@ use Illuminate\Session\Middleware\AuthenticateSession;
 use Illuminate\Session\Middleware\StartSession;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
 
-use App\Filament\Auth\Login;
+use App\Filament\Auth\CustomerLogin;
 
 class TestPanelPanelProvider extends PanelProvider
 {
@@ -27,9 +28,23 @@ class TestPanelPanelProvider extends PanelProvider
         return $panel
             ->id('testpanel')
             ->path('testpanel')
-            ->login(Login::class)
+            ->registration()
+            ->login(CustomerLogin::class)
+            ->topNavigation()
             ->colors([
-                'primary' => Color::Amber,
+                'primary' => Color::Emerald,
+            ])
+            ->navigationGroups([
+                Navigation\NavigationGroup::make()
+                     ->label('Shop')
+                     ->icon('heroicon-o-shopping-cart'),
+                Navigation\NavigationGroup::make()
+                    ->label('Blog')
+                    ->icon('heroicon-o-pencil'),
+                Navigation\NavigationGroup::make()
+                    ->label(fn (): string => __('navigation.settings'))
+                    ->icon('heroicon-o-cog-6-tooth')
+                    ->collapsed(),
             ])
             ->discoverResources(in: app_path('Filament/TestPanel/Resources'), for: 'App\\Filament\\TestPanel\\Resources')
             ->discoverPages(in: app_path('Filament/TestPanel/Pages'), for: 'App\\Filament\\TestPanel\\Pages')

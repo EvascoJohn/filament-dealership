@@ -40,6 +40,7 @@ class AdminPanelProvider extends PanelProvider
             ->id('dashboard')
             ->path('dashboard')
             ->login(Login::class)
+            ->sidebarFullyCollapsibleOnDesktop()
             ->colors([
                 'primary' => Color::Amber,
             ])

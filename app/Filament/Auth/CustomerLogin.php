@@ -10,6 +10,8 @@ use Filament\Pages\Auth\Login as BaseAuth;
 class CustomerLogin extends BaseAuth
 {
 
+    protected static string $layout = 'filament-panels::components.layout.base';
+
     protected static string $view = 'filament.customer.customer-login';
 
 

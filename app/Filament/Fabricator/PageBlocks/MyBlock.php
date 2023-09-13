@@ -11,7 +11,7 @@ class MyBlock extends PageBlock
     public static function getBlockSchema(): Block
     {
         return Block::make('my')
-            ->label('Navigation Elements')
+            ->label('My Block')
             ->schema([
                 
             ]);

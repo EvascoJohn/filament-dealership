@@ -4,3 +4,5 @@
     'heading_title',
     'heading_description',
 ])
+
+<livewire:test-l-w/>

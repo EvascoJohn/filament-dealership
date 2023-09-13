@@ -9,7 +9,6 @@ use Z3d0X\FilamentFabricator\PageBlocks\PageBlock;
 class CustomerApplicationForm extends PageBlock
 {
 
-
     public static function getBlockSchema(): Block
     {
         return Block::make('customer-application-form')

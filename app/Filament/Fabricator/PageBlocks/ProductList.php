@@ -14,7 +14,7 @@ class ProductList extends PageBlock
     {
         return Block::make('product-list')
             ->schema([
-                //
+                
             ]);
     }
 

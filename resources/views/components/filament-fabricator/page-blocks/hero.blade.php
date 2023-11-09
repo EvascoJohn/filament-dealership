@@ -1,21 +1,25 @@
 @aware(['page'])
 @props([
-    'heading_title',
-    'heading_description',
+    'heading_image',
+    'heading_title'
 ])
-<div class="px-4 py-4 md:py-8">
-    <div class="max-w-7xl mx-auto">
-        <section class="text-gray-400 bg-gray-900 body-font">
-            <div class="container mx-auto flex px-5 py-24 items-center justify-center flex-col">
-            <div class="text-center lg:w-2/3 w-full">
-            <h1 class="title-font sm:text-4xl text-3xl mb-4 font-medium text-white">{{ $heading_title }}</h1>
-            <p class="leading-relaxed mb-8">{{ $heading_description }}</p>
-            <div class="flex justify-center">
-                {{-- <button class="inline-flex text-white bg-yellow-500 border-0 py-2 px-6 focus:outline-none hover:bg-yellow-600 rounded text-lg">Button</button>
-                <button class="ml-4 inline-flex text-gray-400 bg-gray-800 border-0 py-2 px-6 focus:outline-none hover:bg-gray-700 hover:text-white rounded text-lg">Button</button> --}}
-            </div>
-            </div>
+
+<section id="Content1">
+    <div>
+       <!-- Heading Image -->
+      <img src="{{ asset("storage/site-images/".$heading_image) }}" alt="section1-image-bg" />
+      <div class="tagline-text">
+        <h2>{{ $heading_title }}</h2>
+        <div class="buttons">
+          {{-- goes to the products section --}}
+          <button class="explore-button" onclick="window.location.href = '/products';">
+            Explore
+          </button>
+          {{-- goes to the registration form --}}
+          <button class="register-button" onclick="window.location.href = '/customer';">
+            Register
+          </button>
         </div>
-        </section>
+      </div>
     </div>
-</div>
+</section>

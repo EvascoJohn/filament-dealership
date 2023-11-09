@@ -6,14 +6,21 @@ use App\Filament\Resources\PaymentResource\Pages;
 use App\Models\CustomerApplication;
 use App\Models\Unit;
 use App\Models\Payment;
+use Illuminate\Support\Facades\Blade;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
-use Illuminate\Database\Query\Builder;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Illuminate\Support\Carbon;
+use Filament\Notifications;
+use Illuminate\Database\Eloquent\Model;
+
+use App\Filament\Pages\TestPage;
+use App\Filament\Resources\CustomerApplicationResource\Pages\ViewCustomerApplication;
 
 class PaymentResource extends Resource
 {
@@ -25,21 +32,89 @@ class PaymentResource extends Resource
     {
         return $form
             ->schema([
-                Forms\Components\TextInput::make('payment_type')->label('Payment Type:')
-                        ->columnSpan(1)
-                        ->required(true),
                 Forms\Components\Select::make('customer_application_id')
-                        ->label('Application ID:')
-                        ->relationship('customerApplication', 'id')
+                        ->relationship(
+                            name: 'customerApplication',
+                            titleAttribute: 'applicant_lastname',
+                            modifyQueryUsing: fn (Builder $query) => $query->where("application_status", "active"),
+                        )
+                        ->label('For Applicant:')
                         ->preload()
                         ->searchable()
                         ->required()
-                        ->live(),
-                Forms\Components\Select::make('payment_amount')
-                        ->relationship('customerApplication', 'unit_monthly_amort')
-                        ->label('Payment Amount:')
+                        ->live()
+                        ->afterStateUpdated(
+                            function($state, Forms\Set $set){
+                                $application = CustomerApplication::query()
+                                        ->where("id", $state)
+                                        ->first();
+
+                                $due_date = $application->due_date;
+                                $today = Carbon::parse(Carbon::today()->format('Y-m-d'));
+                                $amort_fin = $application->unit_amort_fin;
+                                $set('due_date', $due_date);
+                                $set('payment_amount', $amort_fin);
+
+                                //Y-m-d
+
+                                $delinquent = Carbon::parse(Carbon::createFromFormat('Y-m-d', $due_date)->addDays(30));
+
+                                $is_advance = $today->lessThan($due_date);
+                                $is_current = $today->equalTo($due_date);
+                                $is_overdue = $today->greaterThan($due_date) && $today->lessThan($delinquent);
+                                $is_delinquent = $today->greaterThan($delinquent);
+
+                                if($today->lessThan($due_date)){
+                                    $set('payment_status', 'advance');
+                                }
+                                elseif($today->equalTo($due_date)){
+                                    $set('payment_status', 'current');
+                                }
+                                elseif($today->greaterThan($due_date) && $today->lessThan($delinquent)){
+                                    $set('payment_status', 'overdue');
+                                }
+                                elseif($today->greaterThan($delinquent)){
+                                    $set('payment_status', 'delinquent');
+                                }
+                            }
+                ),
+                // Forms\Components\Select::make('current'),
+                // Forms\Components\Select::make('overdue'),
+                // Forms\Components\Select::make('delinquent'),
+                // Forms\Components\Select::make('penalty'),
+                // Forms\Components\Select::make('total'),
+                // Forms\Components\Select::make('m_a'),
+                // Forms\Components\Select::make('credit'),
+                // Forms\Components\Select::make('penalty'),
+                // Forms\Components\Select::make('customer_application_id'),
+
+                Forms\Components\TextInput::make('due_date')
+                        ->hidden(function(string $operation){
+                            if($operation == "edit"){
+                                return true;
+                            }
+                        }),
+                Forms\Components\TextInput::make('payment_amount'),
+                Forms\Components\TextInput::make('penalty'),
+                Forms\Components\Select::make('payment_status')
+                        ->live()
+                        ->options([
+                            'advance' => 'Advance',
+                            'current' => 'Current',
+                            'overdue' => 'Overdue',
+                            'diligent' => 'Diligent',
+                        ])
+                        ->required(),
+                
+                Forms\Components\Select::make('payment_type')->label('Payment Type:')
+                        ->options([
+                            "field" => "Field",
+                            "office" => "Office",
+                            "bank" => "Bank",
+                        ])
                         ->columnSpan(1)
                         ->required(true),
+
             ]);
     }
 
@@ -47,33 +122,47 @@ class PaymentResource extends Resource
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('id')
-                        ->label('ID'),
+                    Tables\Columns\TextColumn::make('id')
+                            ->label('ID')
+                            ->searchable(),
+                    Tables\Columns\TextColumn::make('customerApplication.applicant_lastname')
+                            ->label('First Name')
+                            ->searchable(),
+                    Tables\Columns\TextColumn::make('payment_amount')
+                            ->label('Payment Amount')
+                            ->money('php'),
 
-                Tables\Columns\TextColumn::make('customerApplication.applicant_lastname')
-                        ->label('First Name'),
-
-                Tables\Columns\TextColumn::make('payment_amount')
-                        ->label('Payment Amount')
-                        ->money('php'),
-
-                Tables\Columns\TextColumn::make('created_at')
-                        ->label('Date Paid')
-                        ->dateTime('d-M-Y'),
+                    Tables\Columns\TextColumn::make('created_at')
+                            ->label('Date Paid')
+                            ->dateTime('d-M-Y'),
             ])
+            ->defaultSort('created_at', 'desc')
+
+            ->defaultPaginationPageOption(5)
             ->filters([
                 Tables\Filters\Filter::make('created_at')
             ])
+            
             ->actions([
                 Tables\Actions\EditAction::make(),
+                Tables\Actions\Action::make('pdf') 
+                ->label('Print')
+                ->color('success')
+                ->action(function (Model $record) {
+                    return response()->streamDownload(function () use ($record) {
+                        echo Pdf::loadHtml(
+                            Blade::render('monthly_amort_receipt', ['record' => $record, 'date_today' => Carbon::now()->format('d-M-Y')])
+                        )->stream();
+                    }, $record->id . '.pdf');
+                }), 
             ])
             ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
-                ]),
+                // Tables\Actions\BulkActionGroup::make([
+                //     Tables\Actions\DeleteBulkAction::make(),
+                // ]),
             ])
             ->emptyStateActions([
-                Tables\Actions\CreateAction::make(),
+                Tables\Actions\CreateAction::make()->requiresConfirmation(),
             ]);
     }
     
@@ -90,6 +179,7 @@ class PaymentResource extends Resource
             'index' => Pages\ListPayments::route('/'),
             'create' => Pages\CreatePayment::route('/create'),
             'edit' => Pages\EditPayment::route('/{record}/edit'),
+            'view-customer-application' => ViewCustomerApplication::route('/{record}'),
         ];
-    }    
+    }
 }

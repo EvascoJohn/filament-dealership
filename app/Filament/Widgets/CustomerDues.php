@@ -15,6 +15,8 @@ use Illuminate\Database\Eloquent\Builder;
 class CustomerDues extends BaseWidget
 {
 
+    protected int | string | array $columnSpan = 'full';
+
     public function table(Table $table): Table
     {
         return $table
@@ -25,17 +27,17 @@ class CustomerDues extends BaseWidget
             )
             ->columns([
                 Tables\Columns\TextColumn::make("id")
-                        ->color('danger'),
+                        ->label("Application ID"),
                 Tables\Columns\TextColumn::make("due_date")
-                        ->dateTime('M d Y')
-                        ->color('danger'),
-                Tables\Columns\TextColumn::make("applicant_lastname")
-                        ->color('danger'),
-                Tables\Columns\TextColumn::make("unit_monthly_amort")
-                        ->color('success'),
+                        ->dateTime('M d Y'),
+                Tables\Columns\TextColumn::make("applicant_lastname"),
+                Tables\Columns\TextColumn::make("unit_amort_fin")
+                        ->label("Monthly Amort.")
+                        ->money("php")
+                        ->color("success"),
             ])
             ->actions([
-                Tables\Actions\Action::make('open')
+                Tables\Actions\Action::make('view')
                     ->url(fn (CustomerApplication $record): string => CustomerApplicationResource::getUrl('edit', ['record' => $record])),
             ]);
     }

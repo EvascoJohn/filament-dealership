@@ -2,6 +2,7 @@
 
 namespace App\Providers\Filament;
 
+use App\Filament\Auth\CustomerLogin;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\DisableBladeIconComponents;
 use Filament\Http\Middleware\DispatchServingFilamentEvent;
@@ -19,17 +20,27 @@ use Illuminate\Session\Middleware\StartSession;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
 
 use App\Filament\Auth\Login;
+use App\Filament\TestPanel\Pages\Auth\Register;
+use Filament\Pages\Auth\EditProfile;
+use Filament\Pages\Auth\EmailVerification\EmailVerificationPrompt;
+use Filament\Pages\Auth\PasswordReset\RequestPasswordReset;
 
 class TestPanelPanelProvider extends PanelProvider
 {
     public function panel(Panel $panel): Panel
     {
         return $panel
-            ->id('testpanel')
-            ->path('testpanel')
-            ->login(Login::class)
+            ->id('customer')
+            ->path('customer')
+            ->authGuard('web')
+            ->login(CustomerLogin::class)
+            ->registration(Register::class)
+            ->passwordReset(RequestPasswordReset::class)
+            ->emailVerification(EmailVerificationPrompt::class)
+            ->topNavigation(true)
+            ->profile(EditProfile::class)
             ->colors([
-                'primary' => Color::Amber,
+                'primary' => Color::Emerald,
             ])
             ->discoverResources(in: app_path('Filament/TestPanel/Resources'), for: 'App\\Filament\\TestPanel\\Resources')
             ->discoverPages(in: app_path('Filament/TestPanel/Pages'), for: 'App\\Filament\\TestPanel\\Pages')
@@ -39,7 +50,7 @@ class TestPanelPanelProvider extends PanelProvider
             ->discoverWidgets(in: app_path('Filament/TestPanel/Widgets'), for: 'App\\Filament\\TestPanel\\Widgets')
             ->widgets([
                 Widgets\AccountWidget::class,
-                Widgets\FilamentInfoWidget::class,
+                // Widgets\FilamentInfoWidget::class,
             ])
             ->middleware([
                 EncryptCookies::class,

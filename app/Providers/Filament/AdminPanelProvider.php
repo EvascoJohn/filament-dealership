@@ -2,6 +2,7 @@
 
 namespace App\Providers\Filament;
 
+use App\Http\Middleware\AdminUser;
 use App\Filament\Pages\DealershipDashboard;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\DisableBladeIconComponents;
@@ -13,6 +14,7 @@ use Filament\Panel;
 use App;
 use App\Filament\Auth;
 use App\Filament\Auth\Login;
+use App\Filament\Pages\CustomBackupPage;
 use App\Filament\Resources\UserResource;
 use App\Models\User;
 use Filament\Facades\Filament;
@@ -29,7 +31,9 @@ use Illuminate\View\Middleware\ShareErrorsFromSession;
 use Illuminate\Contracts\Support\Htmlable;
 
 
+
 use App\Filament\Widgets as MyWidgets;
+use ShuvroRoy\FilamentSpatieLaravelBackup\FilamentSpatieLaravelBackupPlugin;
 
 class AdminPanelProvider extends PanelProvider
 {
@@ -40,7 +44,9 @@ class AdminPanelProvider extends PanelProvider
             ->default()
             ->id('admin')
             ->path('admin')
+            ->authGuard("admin")
             ->login(Login::class)
+            ->sidebarCollapsibleOnDesktop()
             ->colors([
                 'primary' => Color::Amber,
             ])
@@ -59,6 +65,7 @@ class AdminPanelProvider extends PanelProvider
             ])
             ->discoverWidgets(in: app_path('Filament/Widgets'), for: 'App\\Filament\\Widgets')
             ->widgets([
+                MyWidgets\AmortizationRevenueSummary::class,
                 Widgets\AccountWidget::class,
                 MyWidgets\CustomerDues::class,
             ])
@@ -69,6 +76,7 @@ class AdminPanelProvider extends PanelProvider
                 AuthenticateSession::class,
                 ShareErrorsFromSession::class,
                 VerifyCsrfToken::class,
+                // AdminUser::class,
                 SubstituteBindings::class,
                 DisableBladeIconComponents::class,
                 DispatchServingFilamentEvent::class,
@@ -78,6 +86,7 @@ class AdminPanelProvider extends PanelProvider
             ])
             ->plugins([
                 FilamentFabricatorPlugin::make(),
+                FilamentSpatieLaravelBackupPlugin::make()->usingPage(CustomBackupPage::class)
             ]);
     }
 }

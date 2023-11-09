@@ -27,6 +27,7 @@ return [
         \Illuminate\Cookie\Middleware\EncryptCookies::class,
         \Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse::class,
         \Illuminate\Session\Middleware\StartSession::class,
+        \App\Http\Middleware\CustomerUser::class,
         // \Illuminate\Session\Middleware\AuthenticateSession::class,
         \Illuminate\View\Middleware\ShareErrorsFromSession::class,
         \Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class,
@@ -37,7 +38,7 @@ return [
 
     'page-resource' => \Z3d0X\FilamentFabricator\Resources\PageResource::class,
 
-    'enable-view-page' => false,
+    'enable-view-page' => true,
 
     /*
      * This is the name of the table that will be created by the migration and

@@ -3,13 +3,8 @@
 namespace App\Filament\Resources;
 
 use App\Filament\Resources\UnitResource\Pages;
-use App\Filament\Resources\UnitResource\RelationManagers;
-use App\Filament\Resources\UnitResource\RelationManagers\IncomingUnitRelationManager;
-use App\Filament\Resources\UnitResource\RelationManagers\OutgoingUnitRelationManager;
-use App\Models\OutgoingUnit;
 use App\Models\Unit;
 use Filament\Forms;
-use Filament\Forms\Components\TextInput;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
@@ -30,21 +25,19 @@ class UnitResource extends Resource
     {
         return $form
             ->schema([
-                TextInput::make('unit_model')
-                        ->label('Model')
+                Forms\Components\Select::make('unit_model_id')
+                        ->relationship('unitModel', 'model_name')
                         ->required(),
-                TextInput::make('unit_color')
-                        ->label('Color'),
-                TextInput::make('unit_type')
-                        ->label('Type')
-                        ->required(),
-                TextInput::make('unit_quantity')
-                        ->label('Quantity')
+                Forms\Components\TextInput::make('chasis_number')
                         ->numeric()
-                        ->rules(['integer', 'min:0'])
                         ->required(),
-                TextInput::make('unit_srp')
-                        ->label('Selling Retail Price')
+                Forms\Components\Textarea::make('notes'),
+                Forms\Components\Select::make('status')
+                        ->options([
+                            'brand-new' => 'New',
+                            'depo' => 'Depo',
+                            'repo' => 'Repo',
+                        ])
                         ->required(),
             ]);
     }
@@ -53,17 +46,19 @@ class UnitResource extends Resource
     {
         return $table
             ->columns([
-                TextColumn::make('unit_model')->label('Model'),
-                TextColumn::make('unit_srp')->label('Price')->money('php'),
-                TextColumn::make('unit_quantity')->label('Quantity'),
-                TextColumn::make('unit_model')->searchable(['unit_model', 'unit_price', 'unit_type']),
+                TextColumn::make('id')->label('Id'),
+                TextColumn::make('unitModel.model_name')->label('Model'),
+                TextColumn::make('status')->label('status'),
+                TextColumn::make('unitModel.price')->label('Price')->money('php'),
+                TextColumn::make('chasis_number'),
+                TextColumn::make('created_at'),
             ])
             ->filters([
-                Tables\Filters\Filter::make('branch_filter')
-                    ->default()
-                    ->query(function (Builder $query, array $data): Builder {
-                        return $query->where('unit_branch', auth()->user()->branch_id);
-                    })
+                // Tables\Filters\Filter::make('branch_filter')
+                //     ->default()
+                //     ->query(function (Builder $query, array $data): Builder {
+                //         return $query->where('branch_id', auth()->user()->branch_id);
+                //     })
             ])
             ->actions([
                 Tables\Actions\EditAction::make()

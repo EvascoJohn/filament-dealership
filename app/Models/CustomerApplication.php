@@ -2,24 +2,35 @@
 
 namespace App\Models;
 
+use App\Models\Scopes\CustomerApplicationScope;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Spatie\MediaLibrary\HasMedia;
+use Spatie\MediaLibrary\InteractsWithMedia;
 
-class CustomerApplication extends Model
+class CustomerApplication extends Model implements HasMedia
 {
     use HasFactory;
+    use InteractsWithMedia;
 
-    protected $fillable = [
-
+    protected $fillable = 
+    [
+        'id',
         'application_status',
         'application_is_new',
 
+        //mutate data here
+        'branch_id', 
+        'author_id',
+        'application_type',
+
         //Unit
-        'unit_id',
+        'unit_model_id',
+        'units_id',
         'unit_term',
         'unit_monthly_amort',
         'unit_ttl_dp',
@@ -142,12 +153,67 @@ class CustomerApplication extends Model
         'dependents'                => 'json',
     ];
 
+    protected static function booted(): void
+    {
+        static::addGlobalScope(new CustomerApplicationScope);
+    }
+
+    public function approveThisApplication()
+    {
+        // changes the applications status
+        $this->application_status = "active";
+        $this->is_application_approved = true;
+        $this->is_application_rejected = false;
+        // gets the associated unit and marks it as owned.
+        // $unit = Unit::query()->where('id', $this->units_id)->first();
+        // $unit->customer_application_id = $this->id;
+        // $unit->save();
+        $this->save();
+    }
+
+    public function rejectThisApplication(): void
+    {
+        // changes the applications status
+        $this->application_status = "reject";
+        $this->is_application_approved = false;
+        $this->is_application_rejected = true;
+        $this->unit_term = null;
+        $this->due_date = null; // sets the due date to null.
+        //gets the associated unit and marks it as owned.
+        $unit = Unit::query()->where('id', $this->units_id)->first();
+        $unit->customer_application_id = null;
+        $this->units_id = null;
+        $unit->save();
+        $this->save();
+    }
+
+    public function release()
+    {
+        //gets the associated unit and marks it as owned.
+        $unit = Unit::query()->where('id', $this->units_id)->first();
+        $unit->customer_application_id = $this->id;
+        $unit->save();
+    }
+    
+    public function branches():BelongsTo{
+        return $this->belongsTo(Branch::class, 'branch_id');
+    }
+
+    public function calculateTotalPayments(): float
+    {
+        return $this->payments()->sum('payment_amount');
+    }
+
     public function payments():HasMany{
         return $this->hasMany(Payment::class);
     }
 
+    public function unitModel():BelongsTo{
+        return $this->belongsTo(UnitModel::class);
+    }
+
     public function units():BelongsTo{
-        return $this->belongsTo(Unit::class, 'unit_id', 'id');
+        return $this->belongsTo(Unit::class, 'units_id');
     }
 
 }
